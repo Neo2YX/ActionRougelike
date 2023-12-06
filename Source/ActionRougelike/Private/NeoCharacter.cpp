@@ -7,6 +7,7 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Components/InputComponent.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "InteractionComponent.h"
 
 // Sets default values
 ANeoCharacter::ANeoCharacter()
@@ -20,6 +21,8 @@ ANeoCharacter::ANeoCharacter()
 
 	CameraComp = CreateDefaultSubobject<UCameraComponent>("CameraComp");
 	CameraComp->SetupAttachment(SpringArmComp);
+
+	InteractionComp = CreateDefaultSubobject<UInteractionComponent>(TEXT("Interaction Comp"));
 
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 
@@ -53,6 +56,15 @@ void ANeoCharacter::MoveRight(float Value)
 
 void ANeoCharacter::PrimaryAttack()
 {
+	PlayAnimMontage(AttackAnim);
+
+	GetWorldTimerManager().SetTimer(TimeHandle_PrimaryAttack, this, &ANeoCharacter::PrimaryAttack_TimeElapsed, 0.25f);
+
+	
+}
+
+void ANeoCharacter::PrimaryAttack_TimeElapsed()
+{
 	FVector HandLocation = GetMesh()->GetSocketLocation(TEXT("Muzzle_01"));
 
 	FTransform SpawnTF = FTransform(GetControlRotation(), HandLocation);
@@ -62,6 +74,11 @@ void ANeoCharacter::PrimaryAttack()
 
 
 	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTF, SpawnParams);
+}
+
+void ANeoCharacter::PrimaryInteract()
+{
+	InteractionComp->PrimaryInteract();
 }
 
 // Called every frame
@@ -88,5 +105,8 @@ void ANeoCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompon
 
 	//Attack
 	PlayerInputComponent->BindAction("PrimaryAttack", IE_Pressed, this, &ANeoCharacter::PrimaryAttack);
+
+	//Interact
+	PlayerInputComponent->BindAction("PrimaryInteract", IE_Pressed, this, &ANeoCharacter::PrimaryInteract);
 }
 
